@@ -29,7 +29,6 @@ jobs:
         run: |
           flutter create . --platforms=android --org th.shenwang --project-name sbs_search
           sed -i 's/android:label="sbs_search"/android:label="SBS Search"/g' android/app/src/main/AndroidManifest.xml
-          sed -i 's/android:icon="@mipmap\/ic_launcher"/android:icon="@mipmap\/launcher_icon"/g' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
           flutter pub get
           dart run flutter_launcher_icons
