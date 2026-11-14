@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "ShenwangAccount": {
+      "title": "ShenwangAccount",
+      "description": "User identity profile for Shenwang Account across SBS Search and Developer Console.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique account identifier",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name shown in Shenwang Account header",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "identifier": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary Shenwang ID (@shenwang.th) or email address",
+          "maxLength": 160
+        }
+      },
+      "required": ["uid", "displayName", "identifier"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/ShenwangAccount" },
+      "description": "Owner-isolated Shenwang Account document"
+    }
+  }
+}

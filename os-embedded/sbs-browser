@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# SBS Browser - Server-Side Web Browser & OS Embedded System Wrapper
+# Installed to: /usr/local/bin/sbs-browser & /usr/bin/sbs-browser
+# ==============================================================================
+
+set -e
+
+SBS_PORT="${SBS_PORT:-3000}"
+SBS_HOST="${SBS_HOST:-127.0.0.1}"
+SBS_BASE_URL="http://${SBS_HOST}:${SBS_PORT}"
+SBS_ROOT="/opt/sbs-browser"
+
+# Read environment file if present
+if [ -f "/etc/sbs-browser/sbs-browser.env" ]; then
+  # shellcheck source=/dev/null
+  source "/etc/sbs-browser/sbs-browser.env"
+fi
+
+is_daemon_running() {
+  if curl -s -f --connect-timeout 1 "${SBS_BASE_URL}/api/health" >/dev/null 2>&1; then
+    return 0
+  fi
+  # Fallback check root HTTP
+  if curl -s -o /dev/null -w "%{http_code}" --connect-timeout 1 "${SBS_BASE_URL}/" 2>/dev/null | grep -qE "200|304"; then
+    return 0
+  fi
+  return 1
+}
+
+ensure_daemon() {
+  if is_daemon_running; then
+    return 0
+  fi
+
+  # Attempt to start via systemd if systemd is active
+  if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+    systemctl start sbs-browser 2>/dev/null || true
+    sleep 1
+    if is_daemon_running; then
+      return 0
+    fi
+  fi
+
+  # Fallback: start server in background if node exists and file exists
+  if [ -f "${SBS_ROOT}/server.js" ] && command -v node >/dev/null 2>&1; then
+    echo "[SBS Browser] Spawning server daemon in background..." >&2
+    (cd "${SBS_ROOT}" && NODE_ENV=production PORT="${SBS_PORT}" nohup node server.js >/tmp/sbs-browser-daemon.log 2>&1 &)
+    for i in {1..10}; do
+      if is_daemon_running; then
+        return 0
+      fi
+      sleep 0.5
+    done
+  fi
+
+  echo "[SBS Browser] Warning: Could not reach daemon at ${SBS_BASE_URL}. Launching interface anyway..." >&2
+}
+
+# Daemon control flags
+case "$1" in
+  --daemon-status|--status)
+    if is_daemon_running; then
+      echo "SBS Browser Server Daemon: RUNNING (${SBS_BASE_URL})"
+      exit 0
+    else
+      echo "SBS Browser Server Daemon: STOPPED (${SBS_BASE_URL})"
+      exit 1
+    fi
+    ;;
+  --daemon-start|--start)
+    if is_daemon_running; then
+      echo "SBS Browser Server Daemon is already running."
+      exit 0
+    fi
+    if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+      systemctl start sbs-browser
+    else
+      (cd "${SBS_ROOT}" && NODE_ENV=production PORT="${SBS_PORT}" nohup node server.js >/tmp/sbs-browser-daemon.log 2>&1 &)
+    fi
+    echo "SBS Browser Server Daemon started."
+    exit 0
+    ;;
+  --daemon-stop|--stop)
+    if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+      systemctl stop sbs-browser
+    else
+      pkill -f "node.*server.js" || true
+    fi
+    echo "SBS Browser Server Daemon stopped."
+    exit 0
+    ;;
+  --daemon-restart|--restart)
+    if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+      systemctl restart sbs-browser
+    else
+      pkill -f "node.*server.js" || true
+      sleep 1
+      (cd "${SBS_ROOT}" && NODE_ENV=production PORT="${SBS_PORT}" nohup node server.js >/tmp/sbs-browser-daemon.log 2>&1 &)
+    fi
+    echo "SBS Browser Server Daemon restarted."
+    exit 0
+    ;;
+  --version|-v)
+    echo "SBS Browser / OS Embedded Server Edition v1.0.0"
+    exit 0
+    ;;
+  --help|-h)
+    cat << 'EOF'
+SBS Browser - Server-Side Web Browser & OS Embedded System Engine
+
+Usage:
+  sbs-browser [OPTIONS] [URL]
+  sbs-browser --search "คำค้นหา"
+
+Options:
+  [URL]                 Open target web address in server-rendered preview
+  -s, --search <QUERY>  Perform search query via SBS Server Search Engine
+  --account             Open standalone Shenwang Account identity portal
+  --kiosk               Launch in full-screen kiosk display mode
+  --fullscreen          Launch in full-screen window
+  --os-shell            Run in OS Embedded Shell mode (internal link trapping)
+  --status              Check server daemon status
+  --start               Start server daemon
+  --stop                Stop server daemon
+  --restart             Restart server daemon
+  --version             Print version
+  --help                Show this message
+EOF
+    exit 0
+    ;;
+esac
+
+ensure_daemon
+
+TARGET_PATH="/"
+EXTRA_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -s|--search)
+      shift
+      QUERY="$1"
+      TARGET_PATH="/?q=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$QUERY" 2>/dev/null || echo "$QUERY")"
+      shift || true
+      ;;
+    --account)
+      TARGET_PATH="/account"
+      shift
+      ;;
+    --kiosk)
+      EXTRA_ARGS+=("--kiosk")
+      shift
+      ;;
+    --fullscreen)
+      EXTRA_ARGS+=("--fullscreen")
+      shift
+      ;;
+    --os-shell)
+      EXTRA_ARGS+=("--os-shell")
+      shift
+      ;;
+    --incognito|--private)
+      EXTRA_ARGS+=("--incognito")
+      shift
+      ;;
+    *)
+      if [[ "$1" =~ ^https?:// ]] || [[ "$1" =~ ^www\. ]] || [[ "$1" =~ \.[a-z]{2,} ]]; then
+        RAW_URL="$1"
+        TARGET_PATH="/?url=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$RAW_URL" 2>/dev/null || echo "$RAW_URL")"
+      elif [[ "$1" =~ ^/ ]]; then
+        TARGET_PATH="$1"
+      elif [ -n "$1" ]; then
+        QUERY="$1"
+        TARGET_PATH="/?q=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$QUERY" 2>/dev/null || echo "$QUERY")"
+      fi
+      shift
+      ;;
+  esac
+done
+
+FINAL_URL="${SBS_BASE_URL}${TARGET_PATH}"
+
+# Launch GUI Viewer:
+# 1. Check if Electron OS Shell exists
+if [ -f "${SBS_ROOT}/desktop/main.cjs" ] && command -v electron >/dev/null 2>&1; then
+  SBS_APP_URL="${FINAL_URL}" exec electron "${SBS_ROOT}/desktop/main.cjs" "${EXTRA_ARGS[@]}"
+elif [ -f "${SBS_ROOT}/desktop/main.cjs" ] && command -v npx >/dev/null 2>&1; then
+  SBS_APP_URL="${FINAL_URL}" exec npx --yes electron@33 "${SBS_ROOT}/desktop/main.cjs" "${EXTRA_ARGS[@]}"
+# 2. Check if Chromium/Chrome is installed
+elif command -v google-chrome >/dev/null 2>&1; then
+  exec google-chrome --app="${FINAL_URL}" "${EXTRA_ARGS[@]}"
+elif command -v chromium-browser >/dev/null 2>&1; then
+  exec chromium-browser --app="${FINAL_URL}" "${EXTRA_ARGS[@]}"
+elif command -v chromium >/dev/null 2>&1; then
+  exec chromium --app="${FINAL_URL}" "${EXTRA_ARGS[@]}"
+# 3. Check for xdg-open
+elif command -v xdg-open >/dev/null 2>&1 && [ -n "$DISPLAY$WAYLAND_DISPLAY" ]; then
+  exec xdg-open "${FINAL_URL}"
+else
+  # Headless / Terminal output
+  echo "SBS Browser URL: ${FINAL_URL}"
+fi

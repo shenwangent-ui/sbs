@@ -1,0 +1,25 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SBS Browser
+GenericName=Server-Side Web Browser & Search Engine
+Comment=Fast, Thai-optimized Server-Side Browser and Shenwang Identity Engine for Custom OS
+Icon=sbs-browser
+Exec=sbs-browser %U
+Terminal=false
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/sbs;x-scheme-handler/shenwang;
+StartupNotify=true
+Actions=NewWindow;PrivateBrowsing;Account;
+
+[Desktop Action NewWindow]
+Name=New Window
+Exec=sbs-browser
+
+[Desktop Action PrivateBrowsing]
+Name=Private Browsing
+Exec=sbs-browser --incognito
+
+[Desktop Action Account]
+Name=Shenwang Account Portal
+Exec=sbs-browser /account

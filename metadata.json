@@ -1,0 +1,6 @@
+{
+  "name": "SBS Engine",
+  "description": "Shenwang Search Engine - High-speed, Thai-optimized search engine with AI contextual understanding and developer API.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

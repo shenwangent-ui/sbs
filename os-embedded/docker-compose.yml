@@ -1,0 +1,18 @@
+services:
+  sbs-browser:
+    build:
+      context: ..
+      dockerfile: os-embedded/Dockerfile
+    container_name: sbs-browser-server
+    restart: always
+    network_mode: host
+    environment:
+      - PORT=3000
+      - HOST=127.0.0.1
+      - NODE_ENV=production
+      - SBS_OS_EMBEDDED=1
+    volumes:
+      - sbs-data:/opt/sbs-browser/data
+
+volumes:
+  sbs-data:
