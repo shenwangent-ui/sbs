@@ -1,5 +1,7 @@
 name: Build Real SBS Search Installers
 on: [push, workflow_dispatch]
+permissions:
+  contents: write
 jobs:
   build-android-apk:
     runs-on: ubuntu-latest
@@ -33,10 +35,14 @@ jobs:
           dart run flutter_launcher_icons
           flutter build apk --release
           cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/SBS-Search.apk
-      - uses: actions/upload-artifact@v4
+      - name: Publish APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
         with:
-          name: SBS-Search-Android-APK
-          path: flutter-app/build/app/outputs/flutter-apk/SBS-Search.apk
+          tag_name: latest
+          name: SBS Search Latest Release
+          files: flutter-app/build/app/outputs/flutter-apk/SBS-Search.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-windows-exe:
     runs-on: windows-latest
@@ -50,7 +56,11 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
           npx --yes electron-builder@25 --config electron-builder.json --win --publish never
-      - uses: actions/upload-artifact@v4
+      - name: Publish EXE to GitHub Releases
+        uses: softprops/action-gh-release@v2
         with:
-          name: SBS-Search-Windows-EXE
-          path: release/SBS-Search.exe
+          tag_name: latest
+          name: SBS Search Latest Release
+          files: release/SBS-Search.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

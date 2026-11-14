@@ -274,7 +274,7 @@ cd android && ./gradlew assembleRelease bundleRelease`;
                 <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
                   ดาวน์โหลดสำหรับคอมพิวเตอร์ (PC)
                 </div>
-                <div className="text-[11px] text-slate-500">Windows Installer (.exe)</div>
+                <div className="text-[11px] text-slate-500">Windows Installer (.exe • 96 MB)</div>
               </div>
             </div>
             <Download className="w-4 h-4 text-slate-400" />
@@ -291,7 +291,7 @@ cd android && ./gradlew assembleRelease bundleRelease`;
                 <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
                   ดาวน์โหลดสำหรับมือถือ (Android)
                 </div>
-                <div className="text-[11px] text-slate-500">Android Package (.apk • 4.2 MB)</div>
+                <div className="text-[11px] text-slate-500">Android Package (.apk • 18 MB)</div>
               </div>
             </div>
             <Download className="w-4 h-4 text-slate-400" />
