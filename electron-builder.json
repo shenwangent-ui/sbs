@@ -1,6 +1,7 @@
 {
   "appId": "th.shenwang.sbssearch",
   "productName": "SBS Search",
+  "electronVersion": "33.2.1",
   "directories": {
     "output": "release"
   },
