@@ -96,7 +96,7 @@ class _WebShellScreenState extends State<WebShellScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
-            Future.delayed(const Duration(milliseconds: 600), () {
+            Future.delayed(const Duration(milliseconds: 500), () {
               if (mounted) setState(() => _showSplash = false);
             });
           },
@@ -104,8 +104,7 @@ class _WebShellScreenState extends State<WebShellScreen> {
       )
       ..loadRequest(Uri.parse('http://127.0.0.1:${widget.port}/'));
 
-    // สำรองเวลาสูงสุด 2.5 วินาที ให้ปิดหน้า Splash อัตโนมัติ
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted && _showSplash) {
         setState(() => _showSplash = false);
       }
@@ -130,10 +129,11 @@ class _WebShellScreenState extends State<WebShellScreen> {
           child: Stack(
             children: [
               WebViewWidget(controller: _controller),
-              if (_showSplash)
-                AnimatedOpacity(
+              IgnorePointer(
+                ignoring: !_showSplash,
+                child: AnimatedOpacity(
                   opacity: _showSplash ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 350),
                   child: Container(
                     color: Colors.white,
                     width: double.infinity,
@@ -146,7 +146,7 @@ class _WebShellScreenState extends State<WebShellScreen> {
                           width: 96,
                           height: 96,
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 16),
                         RichText(
                           text: const TextSpan(
                             style: TextStyle(
@@ -166,19 +166,11 @@ class _WebShellScreenState extends State<WebShellScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Color(0xFF1D4ED8),
-                          ),
-                        ),
                       ],
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ),
