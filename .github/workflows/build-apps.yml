@@ -24,12 +24,13 @@ jobs:
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-      - name: Build Real Android APK (Exact Web UI & Custom Icon)
+      - name: Build Real Android APK (Exact Web UI & icon.png)
         working-directory: flutter-app
         run: |
           flutter create . --platforms=android --org th.shenwang --project-name sbs_search
           sed -i 's/android:label="sbs_search"/android:label="SBS Search"/g' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          rm -rf android/app/src/main/res/mipmap-*
           flutter pub get
           dart run flutter_launcher_icons
           flutter build apk --release
