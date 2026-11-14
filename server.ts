@@ -1936,34 +1936,12 @@ fi
 });
 
 // Direct download endpoints for actual binary application files (.exe and .apk)
-app.get('/api/v1/download/windows-exe', (_req, res) => {
-  const exePath = path.join(__dirname, 'public', 'downloads', 'SBS-Search.exe');
-  if (!fs.existsSync(exePath)) {
-    return res.status(404).json({ error: 'Windows .exe file not found' });
-  }
-  res.setHeader('Content-Type', 'application/vnd.microsoft.portable-executable');
-  res.setHeader('Content-Disposition', 'attachment; filename="SBS-Search.exe"');
-  return res.sendFile(exePath);
+app.get('/api/v1/download/windows-exe', async (_req, res) => {
+  res.redirect('https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.exe');
 });
 
-app.get('/api/v1/download/windows-full', (_req, res) => {
-  const zipPath = path.join(__dirname, 'public', 'downloads', 'SBS-Search-Windows-Full.zip');
-  if (!fs.existsSync(zipPath)) {
-    return res.status(404).json({ error: 'Windows Full package not found' });
-  }
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename="SBS-Search-Windows-Full.zip"');
-  return res.sendFile(zipPath);
-});
-
-app.get('/api/v1/download/android-apk', (_req, res) => {
-  const apkPath = path.join(__dirname, 'public', 'downloads', 'SBS-Search.apk');
-  if (!fs.existsSync(apkPath)) {
-    return res.status(404).json({ error: 'Android .apk file not found' });
-  }
-  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition', 'attachment; filename="SBS-Search.apk"');
-  return res.sendFile(apkPath);
+app.get('/api/v1/download/android-apk', async (_req, res) => {
+  res.redirect('https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.apk');
 });
 
 app.get('/api/v1/packages/apple-swift', (_req, res) => {
