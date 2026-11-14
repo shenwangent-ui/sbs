@@ -1,0 +1,45 @@
+name: Build Real SBS Search Installers
+on: [push, workflow_dispatch]
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+      - name: Configure & Build Real Android APK
+        working-directory: flutter-app
+        run: |
+          flutter create . --platforms=android --org th.shenwang --project-name sbs_search
+          sed -i 's/android:label="sbs_search"/android:label="SBS Search"/g' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          flutter pub get
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/SBS-Search.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SBS-Search-Android-APK
+          path: flutter-app/build/app/outputs/flutter-apk/SBS-Search.apk
+
+  build-windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install & Build Windows Installer (.exe)
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+          npx --yes electron-builder@25 --config electron-builder.json --win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SBS-Search-Windows-EXE
+          path: release/SBS-Search.exe
