@@ -1,7 +1,7 @@
 name: sbs_search
-description: SBS Search Native Application
+description: SBS Search Native Browser & Search Engine
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   webview_flutter: ^4.10.0
+  shared_preferences: ^2.3.2
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -28,5 +30,4 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/web/
     - assets/icon/logo.png

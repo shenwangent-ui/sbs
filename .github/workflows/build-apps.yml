@@ -7,15 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Build Web UI Assets
-        run: |
-          npm install --legacy-peer-deps
-          npx vite build --base=./
-          mkdir -p flutter-app/assets/web
-          cp -r dist/* flutter-app/assets/web/
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -35,12 +26,11 @@ jobs:
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-      - name: Build & Sign Android APK (Supports In-Place Updates)
+      - name: Build Native Flutter Android APK
         working-directory: flutter-app
         run: |
           flutter create . --platforms=android --org th.shenwang --project-name sbs_search
           sed -i 's/android:label="sbs_search"/android:label="SBS Search"/g' android/app/src/main/AndroidManifest.xml
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
           rm -rf android/app/src/main/res/mipmap-*

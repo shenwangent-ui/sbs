@@ -1,178 +1,128 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'screens/home_screen.dart';
+import 'services/storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
-  final port = await _startLocalAssetServer();
-  runApp(SBSSearchApp(port: port));
+  final isDark = await StorageService.getDarkMode();
+  runApp(SBSSearchRootApp(initialDarkMode: isDark));
 }
 
-Future<int> _startLocalAssetServer() async {
-  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-  server.listen((HttpRequest request) async {
-    var path = request.uri.path;
-    if (path == '/' || path.isEmpty) {
-      path = '/index.html';
-    }
-    try {
-      final data = await rootBundle.load('assets/web$path');
-      request.response.headers.contentType = _getContentType(path);
-      request.response.add(data.buffer.asUint8List());
-    } catch (_) {
-      try {
-        final indexData = await rootBundle.load('assets/web/index.html');
-        request.response.headers.contentType = ContentType.html;
-        request.response.add(indexData.buffer.asUint8List());
-      } catch (e) {
-        request.response.statusCode = HttpStatus.notFound;
-      }
-    }
-    await request.response.close();
-  });
-  return server.port;
+class SBSSearchRootApp extends StatefulWidget {
+  final bool initialDarkMode;
+  const SBSSearchRootApp({super.key, required this.initialDarkMode});
+
+  @override
+  State<SBSSearchRootApp> createState() => _SBSSearchRootAppState();
 }
 
-ContentType _getContentType(String path) {
-  if (path.endsWith('.html')) return ContentType.html;
-  if (path.endsWith('.js') || path.endsWith('.mjs')) {
-    return ContentType('application', 'javascript', charset: 'utf-8');
+class _SBSSearchRootAppState extends State<SBSSearchRootApp> {
+  late bool _isDarkMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _isDarkMode = widget.initialDarkMode;
   }
-  if (path.endsWith('.css')) return ContentType('text', 'css', charset: 'utf-8');
-  if (path.endsWith('.json') || path.endsWith('.webmanifest')) {
-    return ContentType.json;
-  }
-  if (path.endsWith('.svg')) return ContentType('image', 'svg+xml');
-  if (path.endsWith('.png')) return ContentType('image', 'png');
-  if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return ContentType('image', 'jpeg');
-  if (path.endsWith('.ico')) return ContentType('image', 'x-icon');
-  if (path.endsWith('.woff2')) return ContentType('font', 'woff2');
-  return ContentType.binary;
-}
 
-class SBSSearchApp extends StatelessWidget {
-  final int port;
-  const SBSSearchApp({super.key, required this.port});
+  void _toggleDarkMode(bool value) {
+    setState(() => _isDarkMode = value);
+    StorageService.setDarkMode(value);
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SBS Search',
       debugShowCheckedModeBanner: false,
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
+        brightness: Brightness.light,
         colorSchemeSeed: const Color(0xFF1D4ED8),
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       ),
-      home: WebShellScreen(port: port),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorSchemeSeed: const Color(0xFF1D4ED8),
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+      ),
+      home: SplashScreenWrapper(
+        isDarkMode: _isDarkMode,
+        onToggleDarkMode: _toggleDarkMode,
+      ),
     );
   }
 }
 
-class WebShellScreen extends StatefulWidget {
-  final int port;
-  const WebShellScreen({super.key, required this.port});
+class SplashScreenWrapper extends StatefulWidget {
+  final bool isDarkMode;
+  final ValueChanged<bool> onToggleDarkMode;
+
+  const SplashScreenWrapper({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleDarkMode,
+  });
 
   @override
-  State<WebShellScreen> createState() => _WebShellScreenState();
+  State<SplashScreenWrapper> createState() => _SplashScreenWrapperState();
 }
 
-class _WebShellScreenState extends State<WebShellScreen> {
-  late final WebViewController _controller;
-  bool _showSplash = true;
-
+class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.white)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (_) {
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (mounted) setState(() => _showSplash = false);
-            });
-          },
+    Future.delayed(const Duration(milliseconds: 1100), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => HomeScreen(
+            isDarkMode: widget.isDarkMode,
+            onToggleDarkMode: widget.onToggleDarkMode,
+          ),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 300),
         ),
-      )
-      ..loadRequest(Uri.parse('http://127.0.0.1:${widget.port}/'));
-
-    Future.delayed(const Duration(milliseconds: 2200), () {
-      if (mounted && _showSplash) {
-        setState(() => _showSplash = false);
-      }
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        if (await _controller.canGoBack()) {
-          await _controller.goBack();
-        } else {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              WebViewWidget(controller: _controller),
-              IgnorePointer(
-                ignoring: !_showSplash,
-                child: AnimatedOpacity(
-                  opacity: _showSplash ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 350),
-                  child: Container(
-                    color: Colors.white,
-                    width: double.infinity,
-                    height: double.infinity,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/icon/logo.png',
-                          width: 96,
-                          height: 96,
-                        ),
-                        const SizedBox(height: 16),
-                        RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: 'SBS ',
-                                style: TextStyle(color: Color(0xFF1D4ED8)),
-                              ),
-                              TextSpan(
-                                text: 'Search',
-                                style: TextStyle(color: Color(0xFF0F172A)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+    final isDark = widget.isDarkMode;
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/icon/logo.png', width: 96, height: 96),
+            const SizedBox(height: 16),
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+                children: [
+                  const TextSpan(
+                    text: 'SBS ',
+                    style: TextStyle(color: Color(0xFF1D4ED8)),
+                  ),
+                  TextSpan(
+                    text: 'Search',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
