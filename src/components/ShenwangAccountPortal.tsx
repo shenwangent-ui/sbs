@@ -200,7 +200,7 @@ export default function ShenwangAccountPortal({
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/auth/check-identifier', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/check-identifier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -240,7 +240,7 @@ export default function ShenwangAccountPortal({
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/auth/login', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -293,7 +293,7 @@ export default function ShenwangAccountPortal({
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/auth/register', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -330,7 +330,7 @@ export default function ShenwangAccountPortal({
     setErrorMsg(null);
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/auth/profile', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -365,7 +365,7 @@ export default function ShenwangAccountPortal({
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/auth/profile', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -405,7 +405,7 @@ export default function ShenwangAccountPortal({
     setErrorMsg(null);
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/oauth/authorize', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/oauth/authorize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -444,7 +444,7 @@ export default function ShenwangAccountPortal({
 
   const handleRevokeApp = async (clientId: string) => {
     try {
-      const res = await fetch(`/api/v1/auth/connected-apps/${encodeURIComponent(clientId)}`, {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/connected-apps/${encodeURIComponent(clientId)}`, {
         method: 'DELETE',
         headers: sessionToken ? { 'X-Shenwang-Session': sessionToken } : undefined,
         credentials: 'include',
