@@ -236,7 +236,7 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    fetch(`https://sbs-qgai.onrender.com/api/v1/trending')
+    fetch(`https://sbs-qgai.onrender.com/api/v1/trending`)
       .then((res) => res.json())
       .then((data) => {
         if (data.trending) setTrending(data.trending);
@@ -252,7 +252,7 @@ export default function App() {
     }
 
     const storedToken = sessionStorage.getItem('shenwang_session_token');
-    fetch(`https://sbs-qgai.onrender.com/api/v1/auth/me', {
+    fetch(`https://sbs-qgai.onrender.com/api/v1/auth/me`, {
       credentials: 'include',
       headers: storedToken ? { 'X-Shenwang-Session': storedToken } : undefined,
     })
@@ -322,7 +322,7 @@ export default function App() {
     async (nextBookmarks: any[], nextHistory: string[]) => {
       if (!currentUser) return;
       try {
-        await fetch(`https://sbs-qgai.onrender.com/api/v1/user/sync', {
+        await fetch(`https://sbs-qgai.onrender.com/api/v1/user/sync`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -376,7 +376,7 @@ export default function App() {
 
   const handleShenwangSignOut = async () => {
     try {
-      await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/logout', {
+      await fetch(`https://sbs-qgai.onrender.com/api/v1/auth/logout`, {
         method: 'POST',
         credentials: 'include',
         headers: sessionToken ? { 'X-Shenwang-Session': sessionToken } : undefined,
@@ -445,7 +445,7 @@ export default function App() {
     }
 
     try {
-      await fetch(`https://sbs-qgai.onrender.com/api/v1/oauth/token', {
+      await fetch(`https://sbs-qgai.onrender.com/api/v1/oauth/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -634,7 +634,7 @@ export default function App() {
     syncUserAccountData(bookmarks, newHist);
 
     try {
-      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/search', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ q: trimmed, lang: 'th', mode }),
@@ -714,8 +714,8 @@ export default function App() {
     setDevLoadingMeta(true);
     try {
       const [keysRes, logsRes] = await Promise.all([
-        fetch(`https://sbs-qgai.onrender.com/api/v1/developer/keys'),
-        fetch(`https://sbs-qgai.onrender.com/api/v1/developer/logs'),
+        fetch(`https://sbs-qgai.onrender.com/api/v1/developer/keys`),
+        fetch(`https://sbs-qgai.onrender.com/api/v1/developer/logs`),
       ]);
       const keysData = await keysRes.json();
       const logsData = await logsRes.json();
@@ -749,7 +749,7 @@ export default function App() {
   const generateNewKey = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     try {
-      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/developer/keys', {
+      const res = await fetch(`https://sbs-qgai.onrender.com/api/v1/developer/keys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -797,7 +797,7 @@ export default function App() {
     try {
       let res: Response;
       if (explorerEndpoint === 'search') {
-        res = await fetch(`https://sbs-qgai.onrender.com/api/v1/search', {
+        res = await fetch(`https://sbs-qgai.onrender.com/api/v1/search`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -810,7 +810,7 @@ export default function App() {
           headers: { Authorization: `Bearer ${apiKey}` },
         });
       } else {
-        res = await fetch(`https://sbs-qgai.onrender.com/api/v1/trending', {
+        res = await fetch(`https://sbs-qgai.onrender.com/api/v1/trending`, {
           headers: { Authorization: `Bearer ${apiKey}` },
         });
       }
