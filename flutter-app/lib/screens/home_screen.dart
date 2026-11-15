@@ -3,7 +3,6 @@ import '../models/app_models.dart';
 import '../services/storage_service.dart';
 import 'account_screen.dart';
 import 'browser_screen.dart';
-import 'info_screens.dart';
 import 'library_screen.dart';
 
 class _QuickTag {
@@ -97,7 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Header Bar เหมือนในภาพตัวอย่างเป๊ะ
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(
@@ -190,8 +188,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
-            // พื้นที่เนื้อหาตรงกลางหน้าจอ
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
@@ -231,8 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-
-                      // ช่องค้นหาทรงแคปซูล + ปุ่ม "ค้นหา" สีน้ำเงินด้านขวา
                       Container(
                         height: 54,
                         padding: const EdgeInsets.only(left: 16, right: 6),
@@ -298,8 +292,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 22),
-
-                      // ปุ่มแท็กทางลัด 5 ปุ่มตรงกลาง
                       Wrap(
                         alignment: WrapAlignment.center,
                         spacing: 8,
@@ -348,7 +340,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // เมนูสไลด์ด้านขวา (SBS Search Menu) เหมือนในภาพที่ 1 ทุกบรรทัด
   Widget _buildRightMenuDrawer(bool isDark, Color textColor) {
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.78,
@@ -401,30 +392,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             _drawerMenuItem(
-              icon: Icons.layers_outlined,
-              iconColor: const Color(0xFF4F46E5),
-              title: 'สถาปัตยกรรมระบบ 5 ส่วน',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ArchitectureScreen()),
-                );
-              },
-            ),
-            _drawerMenuItem(
-              icon: Icons.code,
-              iconColor: const Color(0xFF0284C7),
-              title: 'Developer API & Playground',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DeveloperApiScreen()),
-                );
-              },
-            ),
-            _drawerMenuItem(
               icon: Icons.bookmark_border,
               iconColor: const Color(0xFFE11D48),
               title: 'หน้าที่บันทึกไว้ ($_bookmarksCount)',
@@ -448,18 +415,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                       builder: (_) => const LibraryScreen(initialTab: 1)),
                 ).then((_) => _loadState());
-              },
-            ),
-            _drawerMenuItem(
-              icon: Icons.download_outlined,
-              iconColor: const Color(0xFF059669),
-              title: 'โหลดแอพ (.EXE / .APK / .AAB)',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DownloadAppScreen()),
-                );
               },
             ),
           ],
