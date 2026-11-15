@@ -1,4 +1,8 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, session } = require('electron');
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-compositing');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -27,7 +31,14 @@ const MIME_TYPES = {
 };
 
 function startEmbeddedWebServer() {
-  const distDir = path.join(__dirname, '..', 'dist');
+  const possibleDist = [
+    path.join(__dirname, '..', 'dist'),
+    path.join(app.getAppPath(), 'dist'),
+    path.join(process.resourcesPath || '', 'app.asar', 'dist'),
+    path.join(process.resourcesPath || '', 'app', 'dist'),
+    path.join(process.resourcesPath || '', 'dist')
+  ];
+  const distDir = possibleDist.find(p => fs.existsSync(path.join(p, 'index.html'))) || possibleDist[0];
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const reqUrl = req.url || '/';
@@ -64,6 +75,11 @@ function startEmbeddedWebServer() {
         filePath = path.join(distDir, 'index.html');
       }
 
+      if (!fs.existsSync(filePath)) {
+        res.writeHead(302, { Location: 'https://sbs.swplayer.online' + reqUrl });
+        res.end();
+        return;
+      }
       const ext = path.extname(filePath).toLowerCase();
       res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
       fs.createReadStream(filePath).pipe(res);
