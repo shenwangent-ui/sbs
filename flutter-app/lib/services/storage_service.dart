@@ -94,10 +94,14 @@ class StorageService {
     await prefs.setString(_tokenKey, token);
 
     if (serverBookmarks != null) {
-      final parsedBookmarks = serverBookmarks
-          .whereType>()
-          .map((e) => BookmarkItem.fromJson(e))
-          .toList();
+      final parsedBookmarks = <BookmarkItem>[];
+      for (final item in serverBookmarks) {
+        if (item is Map) {
+          parsedBookmarks.add(
+            BookmarkItem.fromJson(Map<String, dynamic>.from(item)),
+          );
+        }
+      }
       await prefs.setString(_bookmarksKey,
           jsonEncode(parsedBookmarks.map((e) => e.toJson()).toList()));
     }
@@ -151,7 +155,9 @@ class StorageService {
     final raw = prefs.getString(_bookmarksKey);
     if (raw == null) return [];
     final List decoded = jsonDecode(raw);
-    return decoded.map((e) => BookmarkItem.fromJson(e)).toList();
+    return decoded
+        .map((e) => BookmarkItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   static Future<void> addBookmark(BookmarkItem item) async {

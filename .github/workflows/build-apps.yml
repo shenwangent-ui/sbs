@@ -66,7 +66,7 @@ jobs:
         run: |
           npm install --legacy-peer-deps
           npm run build
-          cp -f public/assets/image/icon.png desktop/icon.png
+          node -e "require('fs').copyFileSync('public/assets/image/icon.png', 'desktop/icon.png')"
           npx --yes png-to-ico desktop/icon.png > desktop/icon.ico
           npx --yes electron-builder@25 --config electron-builder.json --win --publish never
       - name: Publish EXE to GitHub Releases
