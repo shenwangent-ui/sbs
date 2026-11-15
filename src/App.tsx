@@ -1371,6 +1371,9 @@ print(response.json())`,
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
+      <div className="w-full max-w-4xl mx-auto px-4 pt-4 pb-2">
+        <div className="gcse-search"></div>
+      </div>
         {/* URL BAR + WEBPAGE RENDER PREVIEW VIEWPORT */}
         {activeTab === 'preview' && (
           <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#141414]">
