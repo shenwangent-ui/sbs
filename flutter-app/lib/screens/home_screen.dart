@@ -5,6 +5,20 @@ import 'account_screen.dart';
 import 'browser_screen.dart';
 import 'library_screen.dart';
 
+class _QuickLink {
+  final String title;
+  final String url;
+  final IconData icon;
+  final Color color;
+
+  const _QuickLink({
+    required this.title,
+    required this.url,
+    required this.icon,
+    required this.color,
+  });
+}
+
 class HomeScreen extends StatefulWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onToggleDarkMode;
@@ -24,58 +38,58 @@ class _HomeScreenState extends State<HomeScreen> {
   ShenwangUser? _user;
   List<String> _recentHistory = [];
 
-  final List> _quickLinks = [
-    {
-      'title': 'Google',
-      'url': 'https://www.google.com',
-      'icon': Icons.search,
-      'color': const Color(0xFF2563EB),
-    },
-    {
-      'title': 'YouTube',
-      'url': 'https://m.youtube.com',
-      'icon': Icons.play_circle_fill,
-      'color': const Color(0xFFDC2626),
-    },
-    {
-      'title': 'GitHub',
-      'url': 'https://github.com',
-      'icon': Icons.code,
-      'color': const Color(0xFF1E293B),
-    },
-    {
-      'title': 'Wikipedia',
-      'url': 'https://th.m.wikipedia.org',
-      'icon': Icons.menu_book,
-      'color': const Color(0xFF059669),
-    },
-    {
-      'title': 'ข่าววันนี้',
-      'url': 'https://news.google.com',
-      'icon': Icons.newspaper,
-      'color': const Color(0xFFD97706),
-    },
-    {
-      'title': 'แปลภาษา',
-      'url': 'https://translate.google.com',
-      'icon': Icons.translate,
-      'color': const Color(0xFF4F46E5),
-    },
-    {
-      'title': 'แผนที่',
-      'url': 'https://maps.google.com',
-      'icon': Icons.map,
-      'color': const Color(0xFF16A34A),
-    },
-    {
-      'title': 'Shenwang',
-      'url': 'https://github.com/shenwangent-ui',
-      'icon': Icons.shield,
-      'color': const Color(0xFF1D4ED8),
-    },
+  static const List<_QuickLink> _quickLinks = [
+    _QuickLink(
+      title: 'Google',
+      url: 'https://www.google.com',
+      icon: Icons.search,
+      color: Color(0xFF2563EB),
+    ),
+    _QuickLink(
+      title: 'YouTube',
+      url: 'https://m.youtube.com',
+      icon: Icons.play_circle_fill,
+      color: Color(0xFFDC2626),
+    ),
+    _QuickLink(
+      title: 'GitHub',
+      url: 'https://github.com',
+      icon: Icons.code,
+      color: Color(0xFF1E293B),
+    ),
+    _QuickLink(
+      title: 'Wikipedia',
+      url: 'https://th.m.wikipedia.org',
+      icon: Icons.menu_book,
+      color: Color(0xFF059669),
+    ),
+    _QuickLink(
+      title: 'ข่าววันนี้',
+      url: 'https://news.google.com',
+      icon: Icons.newspaper,
+      color: Color(0xFFD97706),
+    ),
+    _QuickLink(
+      title: 'แปลภาษา',
+      url: 'https://translate.google.com',
+      icon: Icons.translate,
+      color: Color(0xFF4F46E5),
+    ),
+    _QuickLink(
+      title: 'แผนที่',
+      url: 'https://maps.google.com',
+      icon: Icons.map,
+      color: Color(0xFF16A34A),
+    ),
+    _QuickLink(
+      title: 'Shenwang',
+      url: 'https://github.com/shenwangent-ui',
+      icon: Icons.shield,
+      color: Color(0xFF1D4ED8),
+    ),
   ];
 
-  final List<String> _trendingTopics = [
+  static const List<String> _trendingTopics = [
     'เทคโนโลยี AI ปี 2026',
     'ข่าวไอทีและซอฟต์แวร์ล่าสุด',
     'พยากรณ์อากาศวันนี้',
@@ -274,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (_, idx) {
                   final item = _quickLinks[idx];
                   return InkWell(
-                    onTap: () => _performSearch(item['url']),
+                    onTap: () => _performSearch(item.url),
                     borderRadius: BorderRadius.circular(16),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -283,15 +297,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: (item['color'] as Color).withOpacity(0.12),
+                            color: item.color.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Icon(item['icon'],
-                              color: item['color'], size: 24),
+                          child: Icon(item.icon, color: item.color, size: 24),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          item['title'],
+                          item.title,
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w500),
                           maxLines: 1,
