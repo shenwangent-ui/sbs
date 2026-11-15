@@ -67,7 +67,7 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
           node -e "require('fs').copyFileSync('public/assets/image/icon.png', 'desktop/icon.png')"
-          npx --yes png-to-ico desktop/icon.png > desktop/icon.ico
+          node -e "import('png-to-ico').then(async m => { const fn = m.default || m; const buf = await fn('desktop/icon.png'); require('fs').writeFileSync('desktop/icon.ico', buf); })"
           npx --yes electron-builder@25 --config electron-builder.json --win --publish never
       - name: Publish EXE to GitHub Releases
         uses: softprops/action-gh-release@v2
