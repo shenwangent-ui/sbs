@@ -22,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ShenwangUser? _user;
   String _searchEngine = 'Google';
   bool _bottomAddressBar = false;
+  String _serverUrl = 'http://127.0.0.1:3000';
 
   @override
   void initState() {
@@ -33,13 +34,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final u = await StorageService.getUser();
     final engine = await StorageService.getSearchEngine();
     final bottomBar = await StorageService.getBottomAddressBar();
+    final sUrl = await StorageService.getServerUrl();
     if (mounted) {
       setState(() {
         _user = u;
         _searchEngine = engine;
         _bottomAddressBar = bottomBar;
+        _serverUrl = sUrl;
       });
     }
+  }
+
+  void _editServerUrl() {
+    final ctrl = TextEditingController(text: _serverUrl);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ที่อยู่เซิร์ฟเวอร์ซิงค์ (Sync Server)'),
+        content: TextField(
+          controller: ctrl,
+          decoration: const InputDecoration(
+            hintText: 'http://127.0.0.1:3000 หรือ https://...',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF154EC1)),
+            onPressed: () async {
+              if (ctrl.text.trim().isNotEmpty) {
+                await StorageService.setServerUrl(ctrl.text.trim());
+                setState(() => _serverUrl = ctrl.text.trim());
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('บันทึก'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _pickSearchEngine() {
@@ -149,27 +183,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Card(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFF154EC1),
-                child: Text(
-                  _user != null && _user!.name.isNotEmpty
-                      ? _user!.name[0].toUpperCase()
-                      : 'S',
-                  style: const TextStyle(color: Colors.white),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF154EC1),
+                    child: Text(
+                      _user != null && _user!.displayName.isNotEmpty
+                          ? _user!.displayName[0].toUpperCase()
+                          : 'S',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(_user != null
+                      ? _user!.displayName
+                      : 'ลงชื่อเข้าใช้ Shenwang'),
+                  subtitle: Text(_user != null
+                      ? _user!.identifier
+                      : 'ซิงค์บุ๊กมาร์กและการตั้งค่าข้ามอุปกรณ์'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AccountScreen()),
+                    ).then((_) => _loadSettings());
+                  },
                 ),
-              ),
-              title: Text(_user != null ? _user!.name : 'ลงชื่อเข้าใช้ Shenwang'),
-              subtitle: Text(_user != null
-                  ? _user!.email
-                  : 'ซิงค์บุ๊กมาร์กและการตั้งค่าข้ามอุปกรณ์'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AccountScreen()),
-                ).then((_) => _loadSettings());
-              },
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.dns_outlined),
+                  title: const Text('เซิร์ฟเวอร์ซิงค์ข้อมูล (Backend)'),
+                  subtitle: Text(_serverUrl),
+                  onTap: _editServerUrl,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 18),
@@ -237,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const ListTile(
                   leading: Icon(Icons.info_outline),
                   title: Text('เกี่ยวกับ SBS Search'),
-                  subtitle: Text('เวอร์ชัน 2.1.0 • พัฒนาโดย Shenwang Ent.'),
+                  subtitle: Text('เวอร์ชัน 2.2.0 • พัฒนาโดย Shenwang Ent.'),
                 ),
               ],
             ),

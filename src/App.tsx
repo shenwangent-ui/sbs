@@ -1272,6 +1272,27 @@ print(response.json())`,
             <div className="flex-1 overflow-y-auto space-y-1">
               <button
                 onClick={() => {
+                  window.open(window.location.href, "_blank");
+                  setShowBurgerMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-medium text-sm transition-colors"
+              >
+                <span className="text-sky-600 font-bold">+</span>
+                <span>แท็บใหม่ (เปิดหน้าต่างใหม่)</span>
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("sbs_search_history");
+                  setShowBurgerMenu(false);
+                  alert("ลบข้อมูลประวัติการท่องเว็บในเบราว์เซอร์เรียบร้อยแล้ว");
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-medium text-sm text-rose-600 transition-colors"
+              >
+                <span>🗑</span>
+                <span>ลบข้อมูลการท่องเว็บ</span>
+              </button>
+              <button
+                onClick={() => {
                   setActiveTab('home');
                   setShowBurgerMenu(false);
                 }}

@@ -1,33 +1,37 @@
 import 'dart:convert';
 
 class ShenwangUser {
-  final String id;
-  final String name;
-  final String email;
-  final String shenwangId;
+  final String uid;
+  final String displayName;
+  final String identifier;
+  final String avatarColor;
   final String createdAt;
 
   ShenwangUser({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.shenwangId,
+    required this.uid,
+    required this.displayName,
+    required this.identifier,
+    this.avatarColor = 'cobalt',
     required this.createdAt,
   });
 
+  String get name => displayName;
+  String get email => identifier;
+  String get shenwangId => identifier;
+
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'shenwangId': shenwangId,
+        'uid': uid,
+        'displayName': displayName,
+        'identifier': identifier,
+        'avatarColor': avatarColor,
         'createdAt': createdAt,
       };
 
   factory ShenwangUser.fromJson(Map<String, dynamic> json) => ShenwangUser(
-        id: json['id'] ?? '',
-        name: json['name'] ?? 'ผู้ใช้งาน Shenwang',
-        email: json['email'] ?? '',
-        shenwangId: json['shenwangId'] ?? 'sw_user',
+        uid: json['uid'] ?? json['id'] ?? '',
+        displayName: json['displayName'] ?? json['name'] ?? 'ผู้ใช้งาน Shenwang',
+        identifier: json['identifier'] ?? json['email'] ?? 'sw_user',
+        avatarColor: json['avatarColor'] ?? 'cobalt',
         createdAt: json['createdAt'] ?? '',
       );
 

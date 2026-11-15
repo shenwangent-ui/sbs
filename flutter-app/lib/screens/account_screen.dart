@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import '../models/app_models.dart';
 import '../services/storage_service.dart';
 
@@ -14,6 +16,7 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen> {
   ShenwangUser? _user;
   bool _isRegister = false;
+  bool _isLoading = false;
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -41,45 +44,92 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _submitAuth() async {
-    final email = _emailController.text.trim();
-    final pass = _passwordController.text.trim();
-    if (email.isEmpty || pass.length < 4) {
+    final identifier = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final displayName = _nameController.text.trim();
+
+    if (identifier.isEmpty || password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน')),
+        const SnackBar(
+            content: Text('กรุณากรอกบัญชีผู้ใช้และรหัสผ่านอย่างน้อย 6 ตัวอักษร')),
       );
       return;
     }
 
-    final displayName = _isRegister && _nameController.text.trim().isNotEmpty
-        ? _nameController.text.trim()
-        : email.split('@').first;
-
-    final user = ShenwangUser(
-      id: 'sw_${DateTime.now().millisecondsSinceEpoch}',
-      name: displayName,
-      email: email,
-      shenwangId: '${displayName.toLowerCase()}@shenwang.id',
-      createdAt: DateTime.now().toIso8601String(),
-    );
-
-    await StorageService.saveUser(user);
-    if (mounted) {
-      setState(() => _user = user);
+    if (_isRegister && displayName.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_isRegister
-                ? 'สร้างบัญชี Shenwang Account สำเร็จ!'
-                : 'เข้าสู่ระบบ Shenwang Account สำเร็จ!')),
+        const SnackBar(
+            content: Text('กรุณากรอกชื่อที่แสดงอย่างน้อย 2 ตัวอักษร')),
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final baseUrl = await StorageService.getServerUrl();
+    final endpoint = _isRegister ? '/api/v1/auth/register' : '/api/v1/auth/login';
+
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              if (_isRegister) 'displayName': displayName,
+              'identifier': identifier,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      final data = jsonDecode(resp.body);
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        final user = ShenwangUser.fromJson(data['user']);
+        final token = data['sessionToken'] ?? '';
+        await StorageService.saveAuthSession(
+          user,
+          token,
+          serverBookmarks: data['bookmarks'],
+          serverHistory: data['history'],
+        );
+        if (mounted) {
+          setState(() {
+            _user = user;
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_isRegister
+                  ? 'สร้างบัญชีและซิงค์เข้าเซิร์ฟเวอร์สำเร็จ!'
+                  : 'เข้าสู่ระบบและซิงค์ข้อมูลจากเซิร์ฟเวอร์แล้ว!'),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(data['error'] ?? 'เกิดข้อผิดพลาดในการยืนยันตัวตน')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'เชื่อมต่อเซิร์ฟเวอร์ ($baseUrl) ไม่สำเร็จ กรุณาเปิดเซิร์ฟเวอร์หรือตั้งค่า URL'),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shenwang Account'),
-      ),
+      appBar: AppBar(title: const Text('Shenwang Account')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: _user != null ? _buildProfileView(_user!) : _buildAuthForm(),
@@ -93,24 +143,24 @@ class _AccountScreenState extends State<AccountScreen> {
         const SizedBox(height: 16),
         CircleAvatar(
           radius: 42,
-          backgroundColor: const Color(0xFF1D4ED8),
+          backgroundColor: const Color(0xFF154EC1),
           child: Text(
-            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'S',
+            user.displayName.isNotEmpty
+                ? user.displayName[0].toUpperCase()
+                : 'S',
             style: const TextStyle(
                 fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
         const SizedBox(height: 14),
-        Text(user.name,
+        Text(user.displayName,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(user.shenwangId,
+        Text(user.identifier,
             style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF1D4ED8),
+                color: Color(0xFF154EC1),
                 fontWeight: FontWeight.w600)),
-        const SizedBox(height: 4),
-        Text(user.email, style: const TextStyle(color: Colors.grey)),
         const SizedBox(height: 28),
         Card(
           shape:
@@ -118,13 +168,13 @@ class _AccountScreenState extends State<AccountScreen> {
           child: Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.verified_user, color: Colors.green),
-                title: const Text('สถานะบัญชี Shenwang ID'),
-                subtitle: const Text('ยืนยันตัวตนและซิงค์ข้อมูลในเครื่องแล้ว'),
+                leading: const Icon(Icons.cloud_done, color: Colors.green),
+                title: const Text('ซิงค์ฐานข้อมูลเดียวกับเว็บไซต์แล้ว'),
+                subtitle: const Text('ใช้บัญชีนี้เข้าสู่ระบบบนเว็บไซต์ SBS Search ได้ทันที'),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy, size: 18),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: user.shenwangId));
+                    Clipboard.setData(ClipboardData(text: user.identifier));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('คัดลอก Shenwang ID แล้ว')),
                     );
@@ -133,9 +183,17 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.security, color: Color(0xFF1D4ED8)),
-                title: const Text('ระบบเข้าสู่ระบบกลาง (OAuth 2.0)'),
-                subtitle: const Text('พร้อมเชื่อมต่อบริการในเครือ Shenwang Ent.'),
+                leading: const Icon(Icons.sync, color: Color(0xFF154EC1)),
+                title: const Text('ซิงค์บุ๊กมาร์กและประวัติเดี๋ยวนี้'),
+                onTap: () async {
+                  await StorageService.syncWithServer();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('ซิงค์ข้อมูลกับเซิร์ฟเวอร์เรียบร้อยแล้ว')),
+                    );
+                  }
+                },
               ),
             ],
           ),
@@ -171,7 +229,7 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         const SizedBox(height: 6),
         const Text(
-          'บัญชีเดียวสำหรับ SBS Search และบริการในเครือ Shenwang',
+          'บัญชีเดียวซิงค์ข้อมูลร่วมกับเว็บไซต์ SBS Search โดยตรง',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 13, color: Colors.grey),
         ),
@@ -192,7 +250,7 @@ class _AccountScreenState extends State<AccountScreen> {
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
-            labelText: 'อีเมล หรือ Shenwang ID',
+            labelText: 'Shenwang ID หรือ อีเมล',
             prefixIcon: const Icon(Icons.alternate_email),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -202,7 +260,7 @@ class _AccountScreenState extends State<AccountScreen> {
           controller: _passwordController,
           obscureText: _obscurePassword,
           decoration: InputDecoration(
-            labelText: 'รหัสผ่าน',
+            labelText: 'รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)',
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
               icon: Icon(
@@ -235,17 +293,25 @@ class _AccountScreenState extends State<AccountScreen> {
         ],
         const SizedBox(height: 20),
         FilledButton(
-          onPressed: _submitAuth,
+          onPressed: _isLoading ? null : _submitAuth,
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF1D4ED8),
+            backgroundColor: const Color(0xFF154EC1),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
-          child: Text(
-            _isRegister ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white),
+                )
+              : Text(
+                  _isRegister ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
         ),
         const SizedBox(height: 12),
         TextButton(

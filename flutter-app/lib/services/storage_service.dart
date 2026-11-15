@@ -1,14 +1,33 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_models.dart';
 
 class StorageService {
   static const _userKey = 'sbs_shenwang_user';
+  static const _tokenKey = 'sbs_shenwang_token';
+  static const _serverUrlKey = 'sbs_server_url';
   static const _bookmarksKey = 'sbs_bookmarks';
   static const _historyKey = 'sbs_history';
   static const _darkModeKey = 'sbs_dark_mode';
   static const _searchEngineKey = 'sbs_search_engine';
   static const _bottomBarKey = 'sbs_bottom_address_bar';
+
+  static Future<String> getServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_serverUrlKey) ?? 'http://127.0.0.1:3000';
+  }
+
+  static Future<void> setServerUrl(String url) async {
+    final clean = url.trim().replaceAll(RegExp(r'/+$'), '');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_serverUrlKey, clean);
+  }
+
+  static Future<String?> getSessionToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
+  }
 
   static Future<bool> getDarkMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -64,14 +83,67 @@ class StorageService {
     }
   }
 
-  static Future<void> saveUser(ShenwangUser user) async {
+  static Future<void> saveAuthSession(
+    ShenwangUser user,
+    String token, {
+    List<dynamic>? serverBookmarks,
+    List<dynamic>? serverHistory,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, user.encode());
+    await prefs.setString(_tokenKey, token);
+
+    if (serverBookmarks != null) {
+      final parsedBookmarks = serverBookmarks
+          .whereType>()
+          .map((e) => BookmarkItem.fromJson(e))
+          .toList();
+      await prefs.setString(_bookmarksKey,
+          jsonEncode(parsedBookmarks.map((e) => e.toJson()).toList()));
+    }
+    if (serverHistory != null) {
+      final parsedHistory = serverHistory.map((e) => e.toString()).toList();
+      await prefs.setStringList(_historyKey, parsedHistory);
+    }
   }
 
   static Future<void> clearUser() async {
     final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final baseUrl = await getServerUrl();
+    if (token != null && token.isNotEmpty) {
+      try {
+        await http.post(
+          Uri.parse('$baseUrl/api/v1/auth/logout'),
+          headers: {'Authorization': 'Bearer $token'},
+        ).timeout(const Duration(seconds: 4));
+      } catch (_) {}
+    }
     await prefs.remove(_userKey);
+    await prefs.remove(_tokenKey);
+  }
+
+  static Future<void> syncWithServer() async {
+    final token = await getSessionToken();
+    if (token == null || token.isEmpty) return;
+    final baseUrl = await getServerUrl();
+    final bookmarks = await getBookmarks();
+    final history = await getHistory();
+    try {
+      await http
+          .put(
+            Uri.parse('$baseUrl/api/v1/user/sync'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'bookmarks': bookmarks.map((e) => e.toJson()).toList(),
+              'history': history,
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
   }
 
   static Future<List<BookmarkItem>> getBookmarks() async {
@@ -89,6 +161,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _bookmarksKey, jsonEncode(list.map((e) => e.toJson()).toList()));
+    await syncWithServer();
   }
 
   static Future<void> removeBookmark(String url) async {
@@ -97,6 +170,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _bookmarksKey, jsonEncode(list.map((e) => e.toJson()).toList()));
+    await syncWithServer();
   }
 
   static Future<List<String>> getHistory() async {
@@ -113,10 +187,12 @@ class StorageService {
     if (list.length > 50) list.removeLast();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_historyKey, list);
+    await syncWithServer();
   }
 
   static Future<void> clearHistory() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_historyKey);
+    await syncWithServer();
   }
 }
