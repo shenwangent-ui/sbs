@@ -1936,11 +1936,11 @@ fi
 });
 
 // Direct download endpoints for actual binary application files (.exe and .apk)
-app.get('/api/v1/download/windows-exe', async (_req, res) => {
+app.get('https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.exe', async (_req, res) => {
   res.redirect('https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.exe');
 });
 
-app.get('/api/v1/download/android-apk', async (_req, res) => {
+app.get('https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.apk', async (_req, res) => {
   res.redirect('https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.apk');
 });
 

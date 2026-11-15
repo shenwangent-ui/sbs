@@ -264,7 +264,7 @@ cd android && ./gradlew assembleRelease bundleRelease`;
         {/* ปุ่มดาวน์โหลดตัวติดตั้งจริงสำหรับผู้ใช้ทั่วไป (PC .exe / มือถือ .apk) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <a
-            href="/api/v1/download/windows-exe"
+            href="https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.exe"
             download="SBS-Search.exe"
             className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-600 transition-colors"
           >
@@ -281,7 +281,7 @@ cd android && ./gradlew assembleRelease bundleRelease`;
           </a>
 
           <a
-            href="/api/v1/download/android-apk"
+            href="https://github.com/shenwangent-ui/sbs/releases/download/latest/SBS-Search.apk"
             download="SBS-Search.apk"
             className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-emerald-600 transition-colors"
           >
