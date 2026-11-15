@@ -1450,28 +1450,12 @@ print(response.json())`,
     allowpopups="true"
   />
 ) : /youtube\.com|youtu\.be|google\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
-  <div className="w-full h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-    <div className="max-w-md bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-      <h3 className="text-lg font-semibold text-slate-900">{previewData.title || previewData.finalUrl}</h3>
-      <p className="text-sm text-slate-600">เว็บไซต์นี้จำกัดการฝังในเบราว์เซอร์เว็บ สามารถเปิดหน้าต่างเต็มรูปแบบหรือสลับไปโหมด "อ่าน" ด้านบนได้ทันที</p>
-      <div className="flex gap-3 justify-center pt-2">
-        <a
-          href={previewData.finalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition"
-        >
-          เปิดเว็บไซต์เต็มหน้าจอ
-        </a>
-        <button
-          onClick={() => setPreviewViewMode("reader")}
-          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-medium rounded-xl transition"
-        >
-          สลับเป็นโหมดอ่าน
-        </button>
-      </div>
-    </div>
-  </div>
+  <iframe
+    key={`proxy_${previewData.finalUrl}_${previewReloadKey}`}
+    title={previewData.title}
+    src={`https://sbs-ape1.onrender.com/api/v1/proxy?url=${encodeURIComponent(previewData.finalUrl)}`}
+    className="w-full h-[calc(100vh-3.5rem)] border-0 bg-white block"
+  />
 ) : (
   <iframe
     key={`${previewData.finalUrl}_${previewReloadKey}`}

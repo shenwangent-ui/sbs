@@ -1666,6 +1666,50 @@ Return ONLY a JSON object with:
   }
 });
 
+
+// Remote Web Proxy Endpoint (Bypasses X-Frame-Options for in-app viewport)
+app.get('/api/v1/proxy', async (req, res) => {
+  const targetUrl = ((req.query.url as string) || '').trim();
+  if (!targetUrl) return res.status(400).send('Missing url');
+  let finalUrl = /^https?:\/\//i.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
+
+  try {
+    const upstream = await fetch(finalUrl, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'th-TH,th;q=0.9,en;q=0.8',
+      },
+    });
+
+    const contentType = upstream.headers.get('content-type') || 'text/html; charset=utf-8';
+    res.setHeader('Content-Type', contentType);
+    // ลบ Header ที่บล็อกการแสดงในกรอบ
+    res.removeHeader('X-Frame-Options');
+    res.removeHeader('Content-Security-Policy');
+
+    if (contentType.includes('text/html')) {
+      let html = await upstream.text();
+      const baseOrigin = new URL(upstream.url || finalUrl).origin;
+      // ฝัง <base> เพื่อให้รูปภาพ, CSS และสคริปต์โหลดจากโดเมนต้นทางได้ถูกต้อง
+      const baseTag = `<base href="${baseOrigin}/" target="_self">`;
+      if (/<head[^>]*>/i.test(html)) {
+        html = html.replace(/<head[^>]*>/i, (m) => `${m}${baseTag}`);
+      } else {
+        html = baseTag + html;
+      }
+      return res.send(html);
+    } else {
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      return res.send(buffer);
+    }
+  } catch (err: any) {
+    return res.status(502).send(`<div style="font-family:sans-serif;padding:2rem;text-align:center;"><h3>ไม่สามารถโหลดหน้าเว็บผ่านรีโมทพร็อกซีได้</h3><p>${err.message}</p><a href="${finalUrl}" target="_blank">เปิดหน้าเว็บต้นฉบับ</a></div>`);
+  }
+});
+
 // Chrome Web Preview Endpoint (SSRF-protected, fast-cached, 4.5s hard timeout)
 app.get('/api/v1/preview', async (req, res) => {
   const rawUrl = ((req.query.url as string) || '').trim();
