@@ -1,5 +1,9 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, session } = require('electron');
 app.disableHardwareAcceleration();
+app.commandLine.appendSwitch("in-process-gpu");
+app.commandLine.appendSwitch("use-gl", "angle");
+app.commandLine.appendSwitch("use-angle", "swiftshader");
+app.commandLine.appendSwitch("disable-dev-shm-usage");
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('disable-gpu-compositing');
