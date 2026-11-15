@@ -7,6 +7,8 @@ class StorageService {
   static const _bookmarksKey = 'sbs_bookmarks';
   static const _historyKey = 'sbs_history';
   static const _darkModeKey = 'sbs_dark_mode';
+  static const _searchEngineKey = 'sbs_search_engine';
+  static const _bottomBarKey = 'sbs_bottom_address_bar';
 
   static Future<bool> getDarkMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -16,6 +18,39 @@ class StorageService {
   static Future<void> setDarkMode(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_darkModeKey, value);
+  }
+
+  static Future<String> getSearchEngine() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_searchEngineKey) ?? 'Google';
+  }
+
+  static Future<void> setSearchEngine(String engine) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_searchEngineKey, engine);
+  }
+
+  static Future<bool> getBottomAddressBar() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_bottomBarKey) ?? false;
+  }
+
+  static Future<void> setBottomAddressBar(bool isBottom) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_bottomBarKey, isBottom);
+  }
+
+  static String buildSearchUrl(String query, String engine) {
+    final encoded = Uri.encodeComponent(query);
+    switch (engine) {
+      case 'Bing':
+        return 'https://www.bing.com/search?q=$encoded';
+      case 'DuckDuckGo':
+        return 'https://duckduckgo.com/?q=$encoded';
+      case 'Google':
+      default:
+        return 'https://www.google.com/search?q=$encoded';
+    }
   }
 
   static Future<ShenwangUser?> getUser() async {

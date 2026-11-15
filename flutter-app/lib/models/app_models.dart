@@ -64,10 +64,12 @@ class BrowserTabItem {
   final String id;
   String title;
   String url;
+  final bool isIncognito;
 
   BrowserTabItem({
     required this.id,
     required this.title,
     required this.url,
+    this.isIncognito = false,
   });
 }

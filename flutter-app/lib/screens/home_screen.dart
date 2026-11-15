@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../models/app_models.dart';
 import '../services/storage_service.dart';
 import 'account_screen.dart';
 import 'browser_screen.dart';
 import 'library_screen.dart';
+import 'settings_screen.dart';
 
 class _QuickTag {
   final String label;
@@ -56,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _performSearch(String query) {
+  Future<void> _performSearch(String query, {bool incognito = false}) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
 
@@ -66,18 +68,24 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (trimmed.contains('.') && !trimmed.contains(' ')) {
       targetUrl = 'https://$trimmed';
     } else {
-      StorageService.addHistory(trimmed);
-      targetUrl =
-          'https://www.google.com/search?q=${Uri.encodeComponent(trimmed)}';
+      if (!incognito) {
+        await StorageService.addHistory(trimmed);
+      }
+      final engine = await StorageService.getSearchEngine();
+      targetUrl = StorageService.buildSearchUrl(trimmed, engine);
     }
 
     _searchController.clear();
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => BrowserScreen(
           initialUrl: targetUrl,
           initialTitle: trimmed,
+          isIncognito: incognito,
+          isDarkMode: widget.isDarkMode,
+          onToggleDarkMode: widget.onToggleDarkMode,
         ),
       ),
     ).then((_) => _loadState());
@@ -346,8 +354,8 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
@@ -370,13 +378,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Divider(height: 1),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _drawerMenuItem(
               icon: Icons.search,
               iconColor: const Color(0xFF154EC1),
               title: 'หน้าแรก',
               onTap: () => Navigator.pop(context),
             ),
+            _drawerMenuItem(
+              icon: Icons.add_box_outlined,
+              iconColor: const Color(0xFF0284C7),
+              title: 'แท็บใหม่',
+              onTap: () {
+                Navigator.pop(context);
+                _performSearch('https://www.google.com', incognito: false);
+              },
+            ),
+            _drawerMenuItem(
+              icon: Icons.privacy_tip_outlined,
+              iconColor: Colors.deepPurple,
+              title: 'แท็บใหม่ที่ไม่ระบุตัวตน',
+              onTap: () {
+                Navigator.pop(context);
+                _performSearch('https://www.google.com', incognito: true);
+              },
+            ),
+            const Divider(height: 16),
             _drawerMenuItem(
               icon: Icons.verified_user_outlined,
               iconColor: const Color(0xFF154EC1),
@@ -394,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _drawerMenuItem(
               icon: Icons.bookmark_border,
               iconColor: const Color(0xFFE11D48),
-              title: 'หน้าที่บันทึกไว้ ($_bookmarksCount)',
+              title: 'บุ๊กมาร์ก ($_bookmarksCount)',
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -407,13 +434,47 @@ class _HomeScreenState extends State<HomeScreen> {
             _drawerMenuItem(
               icon: Icons.history,
               iconColor: const Color(0xFFD97706),
-              title: 'ประวัติการค้นหา',
+              title: 'ประวัติการเข้าชม',
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => const LibraryScreen(initialTab: 1)),
+                ).then((_) => _loadState());
+              },
+            ),
+            _drawerMenuItem(
+              icon: Icons.delete_outline,
+              iconColor: Colors.red,
+              title: 'ลบข้อมูลการท่องเว็บ',
+              onTap: () async {
+                Navigator.pop(context);
+                await StorageService.clearHistory();
+                await WebViewCookieManager().clearCookies();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('ลบประวัติการท่องเว็บและคุกกี้แล้ว')),
+                  );
+                }
+              },
+            ),
+            const Divider(height: 16),
+            _drawerMenuItem(
+              icon: Icons.settings_outlined,
+              iconColor: const Color(0xFF475569),
+              title: 'การตั้งค่า',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SettingsScreen(
+                      isDarkMode: widget.isDarkMode,
+                      onToggleDarkMode: widget.onToggleDarkMode,
+                    ),
+                  ),
                 ).then((_) => _loadState());
               },
             ),
@@ -430,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 1),
       leading: Icon(icon, color: iconColor, size: 21),
       title: Text(
         title,
