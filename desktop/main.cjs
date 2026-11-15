@@ -256,11 +256,11 @@ function setupDesktopMenu() {
 app.whenReady().then(async () => {
   await startEmbeddedWebServer();
   setupDesktopMenu();
-  createAppWindow(`http://127.0.0.1:${localPort}/`);
+  createAppWindow("https://sbs.swplayer.online/");
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createAppWindow(`http://127.0.0.1:${localPort}/`);
+      createAppWindow("https://sbs.swplayer.online/");
     }
   });
 });
