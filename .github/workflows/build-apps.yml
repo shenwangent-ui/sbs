@@ -20,20 +20,80 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - name: Ensure Permanent Release Keystore Exists
+        run: |
+          mkdir -p flutter-app/android-signing
+          if [ ! -f flutter-app/android-signing/sbs-release.jks ]; then
+            keytool -genkey -v -keystore flutter-app/android-signing/sbs-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias sbskey -storepass sbs2026pass -keypass sbs2026pass -dname "CN=SBS Search, OU=Dev, O=Shenwang, L=PathumThani, ST=Thailand, C=TH"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -f flutter-app/android-signing/sbs-release.jks
+            git commit -m "chore: save permanent release keystore [skip ci]"
+            git push
+          fi
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-      - name: Build Real Android APK (Exact Web UI & icon.png)
+      - name: Build Signed Android APK (Supports In-Place Updates)
         working-directory: flutter-app
         run: |
           flutter create . --platforms=android --org th.shenwang --project-name sbs_search
           sed -i 's/android:label="sbs_search"/android:label="SBS Search"/g' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application android:usesCleartextTraffic="true"/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          
+          cat << 'KEYEOF' > android/key.properties
+          storePassword=sbs2026pass
+          keyPassword=sbs2026pass
+          keyAlias=sbskey
+          storeFile=../../android-signing/sbs-release.jks
+          KEYEOF
+
+          python3 -c '
+          import os
+          p = "android/app/build.gradle" if os.path.exists("android/app/build.gradle") else "android/app/build.gradle.kts"
+          txt = open(p).read()
+          if p.endswith(".kts"):
+              signing = """
+          signingConfigs {
+              create("release") {
+                  keyAlias = "sbskey"
+                  keyPassword = "sbs2026pass"
+                  storeFile = file("../../android-signing/sbs-release.jks")
+                  storePassword = "sbs2026pass"
+              }
+          }
+          buildTypes {
+              getByName("release") {
+                  signingConfig = signingConfigs.getByName("release")
+              }
+          }
+          """
+          else:
+              signing = """
+          signingConfigs {
+              release {
+                  keyAlias "sbskey"
+                  keyPassword "sbs2026pass"
+                  storeFile file("../../android-signing/sbs-release.jks")
+                  storePassword "sbs2026pass"
+              }
+          }
+          buildTypes {
+              release {
+                  signingConfig signingConfigs.release
+              }
+          }
+          """
+          txt = txt.replace("buildTypes {", signing + "\n    // old buildTypes\n    unusedBuildTypes {", 1)
+          open(p, "w").write(txt)
+          '
+
           rm -rf android/app/src/main/res/mipmap-*
           flutter pub get
           dart run flutter_launcher_icons
-          flutter build apk --release
+          flutter build apk --release --build-number=${{ github.run_number }}
           cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/SBS-Search.apk
       - name: Publish APK to GitHub Releases
         uses: softprops/action-gh-release@v2
