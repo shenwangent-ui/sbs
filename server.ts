@@ -473,55 +473,86 @@ async function fetchLiveAutocomplete(q: string): Promise<string[]> {
 }
 
 async function fetchWebRssSearch(query: string): Promise<any[]> {
+  const items: any[] = [];
+  const seen = new Set<string>();
+  const qLower = query.toLowerCase().trim();
+
+  // 1) Official Site Resolver สำหรับชื่อเว็บ/แอปยอดนิยมและโดเมนตรง
+  const knownSites: Record<string, { title: string; url: string; snippet: string }> = {
+    youtube: { title: "YouTube", url: "https://www.youtube.com/", snippet: "เพลิดเพลินกับวิดีโอและเพลงที่คุณชอบ อัปโหลดเนื้อหาต้นฉบับ และแชร์เนื้อหากับเพื่อน ครอบครัว และผู้คนทั่วโลกบน YouTube" },
+    facebook: { title: "Facebook - เข้าสู่ระบบหรือสมัครใช้งาน", url: "https://www.facebook.com/", snippet: "เข้าสู่ระบบ Facebook เพื่อเริ่มแชร์และเชื่อมต่อกับเพื่อนๆ ครอบครัว และคนที่คุณรู้จัก" },
+    tiktok: { title: "TikTok - Make Your Day", url: "https://www.tiktok.com/", snippet: "TikTok - เทรนด์เริ่มต้นที่นี่ ไม่ว่าจะบนอุปกรณ์หรือบนเว็บ ผู้ชมก็สามารถรับชมและค้นพบวิดีโอสั้นที่ปรับแต่งให้เหมาะกับคุณนับล้านรายการ" },
+    instagram: { title: "Instagram", url: "https://www.instagram.com/", snippet: "สร้างบัญชีหรือเข้าสู่ระบบ Instagram - แชร์สิ่งที่คุณชอบกับคนที่เข้าใจคุณ" },
+    google: { title: "Google", url: "https://www.google.com/", snippet: "ค้นหาข้อมูลจากทั่วโลก ทั้งหน้าเว็บ รูปภาพ วิดีโอ และอื่นๆ อีกมากมาย" },
+    github: { title: "GitHub · Build and ship software on a single, collaborative platform", url: "https://github.com/", snippet: "GitHub is where people build software. More than 100 million people use GitHub to discover, fork, and contribute to over 420 million projects." },
+    chatgpt: { title: "ChatGPT", url: "https://chatgpt.com/", snippet: "ChatGPT helps you get answers, find inspiration and be more productive." },
+    shopee: { title: "Shopee Thailand | ช้อปปิ้งออนไลน์ แหล่งรวมสินค้าครบครัน", url: "https://shopee.co.th/", snippet: "ช้อปปิ้งออนไลน์กับ Shopee Thailand ครบทุกหมวดหมู่ พร้อมโปรโมชั่นและโค้ดส่งฟรีทุกวัน" },
+    lazada: { title: "Lazada.co.th | ช้อปปิ้งออนไลน์ ลาซาด้า ประเทศไทย", url: "https://www.lazada.co.th/", snippet: "ช้อปออนไลน์ง่ายๆ ที่ Lazada ประเทศไทย พบสินค้าหลากหลายพร้อมดีลสุดคุ้ม" },
+    netflix: { title: "Netflix ไทย - รับชมรายการทีวีออนไลน์ รับชมภาพยนตร์ออนไลน์", url: "https://www.netflix.com/th/", snippet: "รับชมภาพยนตร์และรายการทีวีของ Netflix ออนไลน์ หรือสตรีมโดยตรงไปยังสมาร์ททีวี คอนโซลเกม พีซี Mac มือถือ แท็บเล็ต และอุปกรณ์อื่นๆ" },
+  };
+
+  if (knownSites[qLower]) {
+    const site = knownSites[qLower];
+    seen.add(site.url.replace(/\/$/, ""));
+    items.push({
+      title: site.title,
+      url: site.url,
+      snippet: site.snippet,
+      domain: getDomainFromUrl(site.url),
+      breadcrumb: getDisplayBreadcrumb(site.url),
+      publishedDate: "",
+    });
+  } else if (/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/i.test(qLower)) {
+    const directUrl = `https://${qLower}/`;
+    seen.add(directUrl.replace(/\/$/, ""));
+    items.push({
+      title: qLower,
+      url: directUrl,
+      snippet: `เว็บไซต์ทางการของ ${qLower}`,
+      domain: qLower,
+      breadcrumb: qLower,
+      publishedDate: "",
+    });
+  }
+
+  // 2) ดึงผลการค้นหาเว็บจริงผ่าน Bing RSS (ไม่โดนบล็อก IP บน Render)
   try {
-    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-    const resp = await fetch(url, {
+    const bingRssUrl = `https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}&mkt=th-TH`;
+    const resp = await fetch(bingRssUrl, {
       signal: AbortSignal.timeout(4000),
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept-Language': 'th-TH,th;q=0.9,en;q=0.8',
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept-Language": "th-TH,th;q=0.9,en;q=0.8",
       },
     });
-    if (!resp.ok) return [];
-    const html = await resp.text();
-    const items: any[] = [];
-    const blockRegex = /<div class="result results_links[\s\S]*?<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>)?/gi;
-    let m;
-    while ((m = blockRegex.exec(html)) !== null && items.length < 12) {
-      let rawHref = decodeHtmlEntities(m[1]);
-      if (rawHref.startsWith('//')) rawHref = `https:${rawHref}`;
-      let targetUrl = rawHref;
-      try {
-        const parsed = new URL(rawHref);
-        const uddg = parsed.searchParams.get('uddg');
-        if (uddg) targetUrl = uddg;
-      } catch {
-        // Keep rawHref
-      }
-      const title = stripTagsToText(m[2]);
-      const snippet = m[3] ? stripTagsToText(m[3]) : '';
-      if (
-        title &&
-        targetUrl &&
-        (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) &&
-        !targetUrl.includes('duckduckgo.com/y.js')
-      ) {
-        const domain = getDomainFromUrl(targetUrl);
-        items.push({
-          title,
-          url: targetUrl,
-          snippet: snippet || `เว็บไซต์และข้อมูลจาก ${domain}`,
-          domain,
-          breadcrumb: getDisplayBreadcrumb(targetUrl),
-          publishedDate: '',
-        });
+    if (resp.ok) {
+      const xml = await resp.text();
+      const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+      let m;
+      while ((m = itemRegex.exec(xml)) !== null && items.length < 12) {
+        const block = m[1];
+        const title = stripTagsToText(extractXmlTag(block, "title"));
+        const link = extractXmlTag(block, "link");
+        const desc = stripTagsToText(extractXmlTag(block, "description"));
+        if (title && link && (link.startsWith("http://") || link.startsWith("https://"))) {
+          const norm = link.replace(/\/$/, "");
+          if (!seen.has(norm)) {
+            seen.add(norm);
+            items.push({
+              title,
+              url: link,
+              snippet: desc || `ผลลัพธ์จาก ${getDomainFromUrl(link)}`,
+              domain: getDomainFromUrl(link),
+              breadcrumb: getDisplayBreadcrumb(link),
+              publishedDate: "",
+            });
+          }
+        }
       }
     }
-    return items;
-  } catch {
-    return [];
-  }
+  } catch {}
+
+  return items;
 }
 
 async function fetchNewsRssSearch(query: string): Promise<any[]> {
@@ -1500,7 +1531,7 @@ Return ONLY a JSON object with:
     }
 
     // Populate Knowledge Panel & AI Summary from Wikipedia if Gemini wasn't available
-    if (!aiSummary && wikiData?.extract) {
+    if (!aiSummary && wikiData?.extract && results.length <= 1) {
       aiSummary = wikiData.extract;
     }
     if (!knowledgePanel && wikiData) {
