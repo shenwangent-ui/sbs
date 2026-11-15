@@ -1372,7 +1372,7 @@ print(response.json())`,
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
       <div className="w-full max-w-4xl mx-auto px-4 pt-4 pb-2">
-        <div className="gcse-search"></div>
+        <div className="gcse-searchresults-only" data-queryParameterName="q"></div>
       </div>
         {/* URL BAR + WEBPAGE RENDER PREVIEW VIEWPORT */}
         {activeTab === 'preview' && (
