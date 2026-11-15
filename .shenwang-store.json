@@ -1,0 +1,24 @@
+{
+  "users": [
+    {
+      "uid": "sw_955670384455c0e37a65",
+      "identifier": "shenwangent@gmail.com",
+      "displayName": "Sbs.com",
+      "avatarColor": "cobalt",
+      "passwordHash": "facdfe8e7b80db1c5435c78fa14aad2101d41737b6e35190963a7462cf3c9c133b300045fa1fd88aba3829fc9fecf7909ec26f3ed981168be4fc7c65af2c4cb9",
+      "passwordSalt": "f540e3c48aed3dc1df4293e416851de3",
+      "createdAt": "2026-11-15T02:08:45.179Z",
+      "lastLoginAt": "2026-11-15T02:08:45.179Z",
+      "bookmarks": [],
+      "history": []
+    }
+  ],
+  "sessions": [
+    {
+      "token": "97f4df3051e77184a23d0dea137d946aea1425cefb1c973686f5a983fd4cf35e",
+      "uid": "sw_955670384455c0e37a65",
+      "createdAt": "2026-11-15T02:08:45.179Z",
+      "expiresAt": 1795313325182
+    }
+  ]
+}
