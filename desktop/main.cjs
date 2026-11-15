@@ -145,7 +145,8 @@ function createAppWindow(targetUrl, options = {}) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      sandbox: false,
+      webviewTag: true,
       partition,
     },
   });
