@@ -431,6 +431,16 @@ export default function App() {
   const prefetchPreview = useCallback((rawUrl: string) => {
     if (!rawUrl) return;
     const url = normalizeUrlInput(rawUrl);
+      const isNativeApp =
+        typeof window !== "undefined" &&
+        (navigator.userAgent.includes("SBSDesktop") ||
+          navigator.userAgent.toLowerCase().includes("electron") ||
+          Boolean((window as any).ReactNativeWebView) ||
+          Boolean((window as any).flutter_inappwebview));
+      if (!isNativeApp && typeof window !== "undefined") {
+        window.location.assign(url);
+        return;
+      }
     if (clientPreviewCache.has(url) || prefetchedPreviewUrls.has(url)) return;
     prefetchedPreviewUrls.add(url);
     fetch(`https://sbs-ape1.onrender.com/api/v1/preview?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(4500) })
