@@ -1427,7 +1427,24 @@ print(response.json())`,
     className="w-full h-[calc(100vh-3.5rem)] border-0 bg-white block"
     allowpopups="true"
   />
-) : /youtube\.com|youtu\.be|google\.com|github\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
+) : /google\.com/i.test(previewData.finalUrl) ? (
+  <div className="w-full h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-6 text-center bg-slate-50 dark:bg-[#141414]">
+    <div className="max-w-sm w-full bg-white dark:bg-[#1e1f22] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+      <h3 className="font-semibold text-slate-900 dark:text-white text-base">เปิด Google Search</h3>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        เพื่อหลีกเลี่ยงการตรวจสอบ reCAPTCHA จากเซิร์ฟเวอร์กลาง สามารถใช้งานช่องค้นหาหลักของ SBS Search หรือเปิดหน้าต่าง Google โดยตรงได้ทันที
+      </p>
+      <a
+        href={previewData.finalUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-block"
+      >
+        เปิดหน้าเว็บ Google โดยตรง
+      </a>
+    </div>
+  </div>
+) : /youtube\.com|youtu\.be|github\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
   <iframe
     key={`proxy_${previewData.finalUrl}_${previewReloadKey}`}
     title={previewData.title}
