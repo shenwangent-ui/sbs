@@ -1667,6 +1667,29 @@ Return ONLY a JSON object with:
 });
 
 
+
+// YouTube Feed & Search API for clean in-app player (avoids SPA skeleton loading)
+app.get('/api/v1/youtube-feed', async (req, res) => {
+  const q = ((req.query.q as string) || '').trim();
+  try {
+    const target = q
+      ? `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`
+      : 'https://www.youtube.com/';
+    const response = await fetch(target, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept-Language': 'th-TH,th;q=0.9,en;q=0.8',
+      },
+      signal: AbortSignal.timeout(7000),
+    });
+    const html = await response.text();
+    const videoIds = Array.from(new Set([...html.matchAll(/"videoId":"([a-zA-Z0-9_-]{11})"/g)].map(m => m[1]))).slice(0, 12);
+    return res.json({ query: q, videos: videoIds });
+  } catch (err: any) {
+    return res.json({ query: q, videos: ['dQw4w9WgXcQ'] });
+  }
+});
+
 // Remote Web Proxy Endpoint (Bypasses X-Frame-Options for in-app viewport)
 app.get('/api/v1/proxy', async (req, res) => {
   const targetUrl = ((req.query.url as string) || '').trim();

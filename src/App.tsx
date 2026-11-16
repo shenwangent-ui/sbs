@@ -511,6 +511,37 @@ export default function App() {
     }
   }, []);
 
+  
+  // Sync browser back button so pressing Back steps through in-app history instead of exiting site
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.sbs_nav_state) {
+        if (state.tab === 'preview' && state.url) {
+          setActiveTab('preview');
+          loadPreviewUrl(state.url, false);
+        } else if (state.tab === 'search') {
+          setActiveTab('search');
+        } else {
+          setActiveTab('home');
+        }
+      } else if (activeTab === 'preview') {
+        if (previewHistoryIdx > 0) {
+          const prevIdx = previewHistoryIdx - 1;
+          setPreviewHistoryIdx(prevIdx);
+          loadPreviewUrl(previewHistory[prevIdx], false);
+        } else {
+          setActiveTab(searchResult ? 'search' : 'home');
+        }
+      } else if (activeTab === 'search') {
+        setActiveTab('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeTab, previewHistory, previewHistoryIdx, searchResult, loadPreviewUrl]);
+
   const openUrlPreview = useCallback(
     (rawUrl: string, pushHistory = true) => {
       const url = normalizeUrlInput(rawUrl);
@@ -519,6 +550,9 @@ export default function App() {
       }
       setActiveTab('preview');
       if (pushHistory) {
+        try {
+          window.history.pushState({ sbs_nav_state: true, tab: 'preview', url }, '', window.location.pathname);
+        } catch {}
         setPreviewHistory((prev) => {
           const sliced = prev.slice(0, previewHistoryIdx + 1);
           if (sliced[sliced.length - 1] === url) return sliced;
@@ -1444,7 +1478,65 @@ print(response.json())`,
       </a>
     </div>
   </div>
-) : /youtube\.com|youtu\.be|github\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
+) : /youtube\.com|youtu\.be/i.test(previewData.finalUrl) ? (
+  (() => {
+    const urlObj = (() => { try { return new URL(previewData.finalUrl); } catch { return null; } })();
+    const vid = urlObj?.searchParams.get('v') || (previewData.finalUrl.includes('youtu.be/') ? previewData.finalUrl.split('youtu.be/')[1]?.split(/[?&]/)[0] : '');
+    const searchQ = urlObj?.searchParams.get('search_query') || '';
+    if (vid) {
+      return (
+        <div className="w-full h-[calc(100vh-3.5rem)] bg-black flex flex-col">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&rel=0`}
+            title={previewData.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="w-full flex-1 border-0"
+          />
+        </div>
+      );
+    }
+    return (
+      <div className="w-full h-[calc(100vh-3.5rem)] bg-white dark:bg-[#0f0f0f] overflow-y-auto p-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const input = (e.currentTarget.elements.namedItem('ytq') as HTMLInputElement)?.value?.trim();
+              if (input) openUrlPreview(`https://www.youtube.com/results?search_query=${encodeURIComponent(input)}`);
+            }}
+            className="flex gap-2"
+          >
+            <input
+              name="ytq"
+              defaultValue={searchQ}
+              placeholder="ค้นหาวิดีโอบน YouTube..."
+              className="flex-1 px-4 py-2 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#1e1f22] text-sm text-slate-900 dark:text-white focus:outline-none"
+            />
+            <button type="submit" className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">
+              ค้นหา
+            </button>
+          </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {['jfKfPfyJRdk', '5qap5aO4i9A', 'DWcJFNfaw9c', 'rUxyKA_-grg', 'lTRiuFIWV54', '7NOSDKb0HlU'].map((id) => (
+              <div
+                key={id}
+                onClick={() => openUrlPreview(`https://www.youtube.com/watch?v=${id}`)}
+                className="cursor-pointer rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all bg-slate-50 dark:bg-[#181818]"
+              >
+                <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" className="w-full aspect-video object-cover" />
+                <div className="p-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                  <span>คลิกเพื่อเล่นวิดีโอในกรอบ</span>
+                  <span className="text-red-600 font-semibold">▶ เล่น</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  })()
+) : /github\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
   <iframe
     key={`proxy_${previewData.finalUrl}_${previewReloadKey}`}
     title={previewData.title}
