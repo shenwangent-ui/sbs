@@ -1441,7 +1441,7 @@ print(response.json())`,
             ) : previewData ? (
               previewViewMode === 'web' && previewData.canRenderWeb && previewData.html ? (
                 <div className="flex-1 relative min-h-[calc(100vh-3.5rem)] bg-white">
-                  {typeof window !== "undefined" && navigator.userAgent.includes("SBSDesktop") ? (
+                  {typeof window !== "undefined" && (navigator.userAgent.includes("SBSDesktop") || navigator.userAgent.toLowerCase().includes("electron")) ? (
   // @ts-ignore
   <webview
     key={`${previewData.finalUrl}_${previewReloadKey}`}
