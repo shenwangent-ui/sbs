@@ -487,7 +487,7 @@ export default function App() {
       const cached = clientPreviewCache.get(targetUrl)!;
       setPreviewData(cached);
       setOmniboxInput(cached.finalUrl || targetUrl);
-      setPreviewViewMode(cached.preferredMode || (cached.canRenderWeb ? 'web' : 'reader'));
+      setPreviewViewMode('web');
       setPreviewLoading(false);
       return;
     }
@@ -510,7 +510,7 @@ export default function App() {
       if (data.finalUrl) clientPreviewCache.set(data.finalUrl, data);
       setPreviewData(data);
       setOmniboxInput(data.finalUrl || targetUrl);
-      setPreviewViewMode(data.preferredMode || (data.canRenderWeb ? 'web' : 'reader'));
+      setPreviewViewMode('web');
     } catch (err: any) {
       if (err?.name === 'AbortError' && previewAbortRef.current !== controller) {
         return;
@@ -536,7 +536,7 @@ export default function App() {
           links: [],
         },
       });
-      setPreviewViewMode('reader');
+      setPreviewViewMode('web');
     } finally {
       clearTimeout(timeoutId);
       if (previewAbortRef.current === controller) {
@@ -1032,7 +1032,7 @@ print(response.json())`,
               <div className="hidden md:flex items-center bg-black/5 dark:bg-white/10 rounded-full p-0.5 text-xs">
                 <button
                   onClick={() => setPreviewViewMode('web')}
-                  disabled={!previewData?.canRenderWeb}
+                  
                   className={`px-2.5 py-1 rounded-full font-medium whitespace-nowrap transition-colors ${
                     previewViewMode === 'web'
                       ? 'bg-white dark:bg-[#3c4043] text-slate-900 dark:text-white shadow-xs'
@@ -1388,7 +1388,7 @@ print(response.json())`,
                 <div className="flex items-center gap-1 shrink-0 ml-2">
                   <button
                     onClick={() => setPreviewViewMode('web')}
-                    disabled={!previewData.canRenderWeb}
+                    
                     className={`px-2 py-0.5 rounded font-medium ${
                       previewViewMode === 'web'
                         ? 'bg-blue-600 text-white'
@@ -1439,7 +1439,7 @@ print(response.json())`,
                 </div>
               </div>
             ) : previewData ? (
-              previewViewMode === 'web' && previewData.canRenderWeb && previewData.html ? (
+              previewViewMode === 'web' ? (
                 <div className="flex-1 relative min-h-[calc(100vh-3.5rem)] bg-white">
                   {typeof window !== "undefined" && (navigator.userAgent.includes("SBSDesktop") || navigator.userAgent.toLowerCase().includes("electron")) ? (
   // @ts-ignore
@@ -1449,7 +1449,7 @@ print(response.json())`,
     className="w-full h-[calc(100vh-3.5rem)] border-0 bg-white block"
     allowpopups="true"
   />
-) : /youtube\.com|youtu\.be|google\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
+) : /youtube\.com|youtu\.be|google\.com|github\.com|facebook\.com|instagram\.com|tiktok\.com|twitter\.com|x\.com/i.test(previewData.finalUrl) ? (
   <iframe
     key={`proxy_${previewData.finalUrl}_${previewReloadKey}`}
     title={previewData.title}
