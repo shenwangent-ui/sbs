@@ -1,48 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  Search,
-  Sparkles,
-  Code2,
-  Globe,
-  Image as ImageIcon,
-  Newspaper,
-  Video,
-  Bookmark,
-  History,
-  Terminal,
-  Copy,
-  Check,
-  ExternalLink,
-  ChevronRight,
-  Sun,
-  Moon,
-  Menu,
-  X,
-  Play,
-  Layers,
-  Cpu,
-  Database,
-  AlertCircle,
-  KeyRound,
-  Eye,
-  EyeOff,
-  Trash2,
-  Plus,
-  RefreshCw,
-  Activity,
-  FileCode2,
-  ShieldCheck,
-  LogOut,
-  UserCog,
-  UserPlus,
-  ArrowLeft,
-  ArrowRight,
-  RotateCw,
-  Lock,
-  Home,
-  BookOpen,
-  Download,
-} from 'lucide-react';
+import { Search, Sparkles, Code2, Globe, Image as ImageIcon, Newspaper, Video, Bookmark, History, Terminal, Copy, Check, ExternalLink, ChevronRight, Sun, Moon, Menu, X, Play, Layers, Cpu, Database, AlertCircle, KeyRound, Eye, EyeOff, Trash2, Plus, RefreshCw, Activity, FileCode2, ShieldCheck, LogOut, UserCog, UserPlus, ArrowLeft, ArrowRight, RotateCw, Lock, Home, BookOpen, Download, Settings, CheckCircle2 } from 'lucide-react';
 import ShenwangAccountPortal, {
   AVATAR_COLOR_MAP,
   ShenwangEmblem,
@@ -171,6 +128,15 @@ export default function App() {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [previewViewMode, setPreviewViewMode] = useState<'web' | 'reader'>('web');
   const [previewReloadKey, setPreviewReloadKey] = useState(0);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [settingsSubView, setSettingsSubView] = useState<'main' | 'perception'>('main');
+  const [allowWebReaderToggle, setAllowWebReaderToggle] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sbs_allow_web_reader') === 'true';
+    }
+    return false;
+  });
+  const [pendingWebReaderConsent, setPendingWebReaderConsent] = useState<boolean>(false);
 
   // Shenwang Account Identity State (browser stays guest/clean until signed in)
   const [currentUser, setCurrentUser] = useState<ShenwangUser | null>(null);
@@ -1029,7 +995,19 @@ print(response.json())`,
 
             {/* Right URL Viewer Actions (no Chrome member profile) */}
             <div className="flex items-center gap-1 shrink-0">
-              <div className="hidden md:flex items-center bg-black/5 dark:bg-white/10 rounded-full p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsSubView('main');
+                  setPendingWebReaderConsent(allowWebReaderToggle);
+                  setShowSettingsModal(true);
+                }}
+                className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 transition-colors"
+                title="ตั้งค่า"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <div className={`${allowWebReaderToggle ? 'hidden md:flex' : 'hidden'} items-center bg-black/5 dark:bg-white/10 rounded-full p-0.5 text-xs`}>
                 <button
                   onClick={() => setPreviewViewMode('web')}
                   
@@ -1385,7 +1363,7 @@ print(response.json())`,
                     {previewData.title}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
+                <div className={`${allowWebReaderToggle ? 'flex' : 'hidden'} items-center gap-1 shrink-0 ml-2`}>
                   <button
                     onClick={() => setPreviewViewMode('web')}
                     
@@ -3019,6 +2997,113 @@ print(response.json())`,
         onClose={() => setShowPackagingModal(false)}
         showToast={showToast}
       />
+
+      {/* Settings & Perception Mode Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#1e1f22] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                {settingsSubView === 'perception' && (
+                  <button
+                    type="button"
+                    onClick={() => setSettingsSubView('main')}
+                    className="text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+                  >
+                    ← กลับ
+                  </button>
+                )}
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                  {settingsSubView === 'main' ? 'ตั้งค่าระบบ SBS Search' : 'เลือกประเภทการรับรู้'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="p-1.5 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {settingsSubView === 'main' ? (
+              <div className="p-5 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingWebReaderConsent(allowWebReaderToggle);
+                    setSettingsSubView('perception');
+                  }}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/70 dark:bg-[#26282c] transition-all text-left"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-blue-600/10 text-blue-600 dark:text-blue-400 mt-0.5">
+                      <Eye className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm text-slate-900 dark:text-white">
+                        เลือกประเภทการรับรู้
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        จัดการสิทธิ์การแสดงผลหน้าเว็บและโหมดอ่านบทความ
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-600/10 text-blue-600 dark:text-blue-400 shrink-0">
+                    {allowWebReaderToggle ? 'เปิดใช้งานแล้ว' : 'ค่าเริ่มต้น'}
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-5 space-y-4">
+                <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#26282c] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={pendingWebReaderConsent}
+                    onChange={(e) => setPendingWebReaderConsent(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="space-y-1.5">
+                    <div className="font-semibold text-sm text-slate-900 dark:text-white">
+                      อนุญาตการเข้าถึงเว็บไซต์แบบเว็บและอ่านบทความ
+                    </div>
+                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                      เมื่อเปิดใช้งาน ระบบจะปลดล็อกแถบเครื่องมือสลับมุมมองระหว่าง <strong>"หน้าเว็บเต็มรูปแบบ"</strong> และ <strong>"โหมดอ่านบทความ"</strong> (สกัดเฉพาะเนื้อหาหลัก ตัดโฆษณา และสรุปใจความสำคัญให้อ่านง่ายขึ้น) บนแถบควบคุมด้านบน
+                    </p>
+                  </div>
+                </label>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAllowWebReaderToggle(pendingWebReaderConsent);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('sbs_allow_web_reader', String(pendingWebReaderConsent));
+                      }
+                      if (!pendingWebReaderConsent) {
+                        setPreviewViewMode('web');
+                      }
+                      setShowSettingsModal(false);
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-1.5 shadow-sm"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>ยืนยันการตั้งค่า</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
