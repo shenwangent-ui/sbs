@@ -438,7 +438,11 @@ export default function App() {
           Boolean((window as any).ReactNativeWebView) ||
           Boolean((window as any).flutter_inappwebview));
       if (!isNativeApp && typeof window !== "undefined") {
-        window.location.assign(url);
+        let targetNav = url;
+        if (/^https?:\/\/(www\.)?youtube\.com\/?$/i.test(targetNav)) {
+          targetNav = "https://m.youtube.com/?app=m&persist_app=1";
+        }
+        window.location.assign(targetNav);
         return;
       }
     if (clientPreviewCache.has(url) || prefetchedPreviewUrls.has(url)) return;
@@ -465,7 +469,11 @@ export default function App() {
         Boolean((window as any).flutter_inappwebview));
     if (!isNativeApp && typeof window !== "undefined") {
       const cleanUrl = /^https?:\/\//i.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
-      window.location.assign(cleanUrl);
+      let targetClean = cleanUrl;
+      if (/^https?:\/\/(www\.)?youtube\.com\/?$/i.test(targetClean)) {
+        targetClean = "https://m.youtube.com/?app=m&persist_app=1";
+      }
+      window.location.assign(targetClean);
       return;
     }
     previewAbortRef.current?.abort();
