@@ -1461,21 +1461,59 @@ print(response.json())`,
     className="w-full h-[calc(100vh-3.5rem)] border-0 bg-white block"
     allowpopups="true"
   />
-) : /google\.com/i.test(previewData.finalUrl) ? (
-  <div className="w-full h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-6 text-center bg-slate-50 dark:bg-[#141414]">
-    <div className="max-w-sm w-full bg-white dark:bg-[#1e1f22] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
-      <h3 className="font-semibold text-slate-900 dark:text-white text-base">เปิด Google Search</h3>
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        เพื่อหลีกเลี่ยงการตรวจสอบ reCAPTCHA จากเซิร์ฟเวอร์กลาง สามารถใช้งานช่องค้นหาหลักของ SBS Search หรือเปิดหน้าต่าง Google โดยตรงได้ทันที
-      </p>
-      <a
-        href={previewData.finalUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-block"
-      >
-        เปิดหน้าเว็บ Google โดยตรง
-      </a>
+) : /google\.com|duckduckgo\.com/i.test(previewData.finalUrl) ? (
+  <div className="w-full h-[calc(100vh-3.5rem)] bg-white dark:bg-[#141414] overflow-y-auto">
+    <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
+      <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+          <span>เอนจินค้นหาภายนอกในกรอบ SBS:</span>
+          <button
+            type="button"
+            onClick={() => openUrlPreview('https://www.google.com/')}
+            className={`px-3 py-1 rounded-full transition-colors ${
+              /google\.com/i.test(previewData.finalUrl)
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            Google
+          </button>
+          <button
+            type="button"
+            onClick={() => openUrlPreview('https://duckduckgo.com/')}
+            className={`px-3 py-1 rounded-full transition-colors ${
+              /duckduckgo\.com/i.test(previewData.finalUrl)
+                ? 'bg-orange-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            DuckDuckGo
+          </button>
+        </div>
+      </div>
+
+      {/duckduckgo\.com/i.test(previewData.finalUrl) ? (
+        <iframe
+          src="https://html.duckduckgo.com/html/"
+          title="DuckDuckGo Search"
+          className="w-full h-[calc(100vh-9rem)] border border-slate-200 dark:border-slate-800 rounded-xl bg-white"
+        />
+      ) : (
+        <div
+          ref={(el) => {
+            if (el && typeof window !== 'undefined' && (window as any).google?.search?.cse?.element) {
+              if (!el.hasChildNodes()) {
+                (window as any).google.search.cse.element.render({
+                  div: el,
+                  tag: 'search',
+                  gname: 'sbs-portal-google',
+                });
+              }
+            }
+          }}
+          className="w-full min-h-[400px]"
+        />
+      )}
     </div>
   </div>
 ) : /youtube\.com|youtu\.be/i.test(previewData.finalUrl) ? (
