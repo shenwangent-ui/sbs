@@ -457,6 +457,17 @@ export default function App() {
   }, []);
 
   const loadPreviewUrl = useCallback(async (targetUrl: string, forceReload = false) => {
+    const isNativeApp =
+      typeof window !== "undefined" &&
+      (navigator.userAgent.includes("SBSDesktop") ||
+        navigator.userAgent.toLowerCase().includes("electron") ||
+        Boolean((window as any).ReactNativeWebView) ||
+        Boolean((window as any).flutter_inappwebview));
+    if (!isNativeApp && typeof window !== "undefined") {
+      const cleanUrl = /^https?:\/\//i.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
+      window.location.assign(cleanUrl);
+      return;
+    }
     previewAbortRef.current?.abort();
 
     if (!forceReload && clientPreviewCache.has(targetUrl)) {
